@@ -142,8 +142,8 @@ def get_avg_beat_locs(beats):
 
 def load_diag_filt_kernel(ksize=5):
     #TODO: generate the kernel programatically, right now its hard coded!!
-    #kernel = np.array([[1,0,0,0,0],[0,1,0,0,0],[0,0,1,0,0],[0,0,0,1,0],[0,0,0,0,1] ])
-    kernel = np.array([[1,-.25,-.25,-.25,-.25],[-.25,1,-.25,-.25,-.25],[-.25,-.25,1,-.25,-.25],[-.25,-.25,-.25,1,-.25],[-.25,-.25,-.25,-.25,1] ])
+    kernel = np.array([[1,0,0,0,0],[0,1,0,0,0],[0,0,1,0,0],[0,0,0,1,0],[0,0,0,0,1] ])
+    #kernel = np.array([[1,-.25,-.25,-.25,-.25],[-.25,1,-.25,-.25,-.25],[-.25,-.25,1,-.25,-.25],[-.25,-.25,-.25,1,-.25],[-.25,-.25,-.25,-.25,1] ])
 
     return kernel
 
@@ -259,7 +259,7 @@ if __name__ == "__main__":
         hpcps = np.load(os.path.join(output_dir, 'hpcps.npy'))
         beats = np.load(os.path.join(output_dir, 'beats.npy'))
     else:
-        hpcps, beats = get_beat_synced_HPCPS(audio, fs, hop_size=256, frame_size=2048, zp_factor=1, window='hann', perform_norm=False)
+        hpcps, beats = get_beat_synced_HPCPS(audio, fs, hop_size=256, frame_size=2048, zp_factor=1, window='hann', perform_norm=True)
         np.save(os.path.join(output_dir, 'hpcps.npy'), hpcps)
         np.save(os.path.join(output_dir, 'beats.npy'), beats)
     
@@ -300,19 +300,31 @@ if __name__ == "__main__":
     print "Performing novelty detection..."
     t1 = time.time()
     mtx_cb_filt = filter_matrix(sim_mtx, kernel_cb)
-    novelty_curve = np.diag(mtx_cb_filt)
+    if load_stuff:
+        novelty_curve = np.load(os.path.join(output_dir, 'novelty_curve.npy'))
+    else:
+        novelty_curve = np.diag(mtx_cb_filt)
+        np.save(os.path.join(output_dir, 'novelty_curve.npy'), novelty_curve)
     print "time taken = %f"%(time.time()-t1)
 
     #picking peaks in the novelty curve doing a smart thresholding (important change points)
     print "Picking peaks of novelty curve..."
     t1 = time.time()
-    npoints = peaks_pick_nc(novelty_curve)
+    if load_stuff:
+        npoints = np.load(os.path.join(output_dir, 'npoints.npy'))
+    else:
+        npoints = peaks_pick_nc(novelty_curve)
+        np.save(os.path.join(output_dir, 'npoints.npy'), npoints)
     print "time taken = %f"%(time.time()-t1)
 
     #computing lag_matrix
     print "Generating lag matrix..."
     t1 = time.time()
-    mtx_lag = gen_lag_mtx(sim_mtx_smth)
+    if load_stuff:
+        mtx_lag = np.load(os.path.join(output_dir, 'mtx_lag.npy'))
+    else:
+        mtx_lag = gen_lag_mtx(sim_mtx_smth)
+        np.save(os.path.join(output_dir, 'mtx_lag.npy'), mtx_lag)
     print "time taken = %f"%(time.time()-t1)
 
     #computing jump points
